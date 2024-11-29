@@ -12,8 +12,12 @@ library(fBasics)
 
 #Collecting Our Data
 
-Stock<-read.csv("C:\\Users\\user\\Documents\\Msc in MFRA\\Semester 1\\Discrete Time Models\\Group Project\\MSFT Stock Prices - 2018-2024.csv")
-Opt<-read.csv("C:\\Users\\user\\Documents\\Msc in MFRA\\Semester 1\\Discrete Time Models\\Group Project\\MSFT Option Prices - Feb '25.csv")
+setwd("C:\\Users\\Flemy\\Documents\\Master's Degree\\Semester 1\\Discrete Time Models\\Group Project")
+
+Stock<-read.csv("MSFT Stock Prices - 2018-2024.csv")
+Opt<-read.csv("MSFT Option Prices - Feb '25.csv")
+
+Opt <- Opt[-1,]
 
 #Data Analysis
 
@@ -64,8 +68,10 @@ delta = 1/365     # Time step
 u = as.numeric(exp(sd(daat)))      # Up factor
 d = 1 / u        # Down factor
 r = 6           # Risk-free interest rate (in percentage)
-N = 91           # Fixed number of steps
-strike_prices = strike  # Vector of strike prices
+N = 91           # Fixed number of steps From November 22, 2024 to February 21, 2025
+strike <- Opt[,7] #Extract the Strike Prices used
+strike_prices = as.numeric(strike)  # Vector of strike prices
+
 
 # Generate the stock price tree
 trees <- stock_tree(s, delta, u, d, N)
