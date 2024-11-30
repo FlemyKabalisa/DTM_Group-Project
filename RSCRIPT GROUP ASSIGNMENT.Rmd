@@ -1,0 +1,213 @@
+---
+title: "DISCRETE TIME MODELS GROUP ASSIGNMENT"
+author: "CYNTHIA KIAMBI 204843 FLEMY KABALISA 121580 KENNETH KIPROTICH 194726"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  word_document: default
+---
+
+```{r}
+#............importing the data
+library(readr)
+mfst_prices<-as.data.frame(read_csv("C:\\Users\\USER\\Desktop\\MFST stock prices.csv"))
+#..........viewing the data
+head(mfst_prices)
+str(mfst_prices)
+summary(mfst_prices)
+length(mfst_prices$Close)
+#...........cleaning up data.........
+
+if (any(!is.finite(mfst_prices$Close))) {
+  cat("Non-finite values found in Close column. Removing them.\n")
+  mfst_prices <- mfst_prices[is.finite(mfst_prices$Close), ]
+}
+
+# Calculate log returns
+logr <- c(0, diff(log(mfst_prices$Close)))
+
+# Append the log returns to the stock_prices_data dataframe
+mfst_prices$logr <- logr
+
+# View the updated data frame
+head(mfst_prices)
+#......TIMEPLOT OF CLOSING PRICES
+library(ggplot2)
+ggplot(mfst_prices, aes(x = Date, y = Close)) +  # Use column names directly
+  geom_line(color = "black", aes(group = 1)) +  # Add group aesthetic
+  labs(title = "Time Plot of Daily Adjusted Closing Prices",
+       x = "Date",
+       y = "Adjusted Closing Price") +
+  theme_minimal()
+```
+
+```{r}
+#.....TIMEPLOT OF THE LOG RETURNS........
+library(ggplot2)
+ggplot(mfst_prices, aes(x = Date, y = logr)) +  # Use column names directly
+  geom_line(color = "blue", aes(group = 1)) +  # Add group aesthetic
+  labs(title = "Time Plot of Log Returns",
+       x = "Date",
+       y = "Log Returns") +
+  theme_minimal()
+#testing for Autocorrelation
+acf(logr, lag=1515, pl="FALSE")
+
+```
+#High volatility of the stock, 
+#No significant trends noticed, but a lot of noise with no clear indication of upward or downward movement
+#Data 
+
+```{r}
+
+#Part c
+
+
+# Step 1: Linearize the data
+
+mfst_prices$log_Close <- log(mfst_prices$Close)
+
+# Step 2: Fit a linear regression model (log(Close) vs Index
+model <- lm(log_Close~Index, data = mfst_prices)
+
+# Step 3: Extract coefficients
+
+summary(model)
+alpha <- coef(model)[1]  # Intercept
+beta <- coef(model)[2]   # Slope
+
+#Step 4 Recover A and B
+A <- exp(alpha)
+B <- beta
+
+print(A)
+print(B)
+```
+
+
+```{r}
+# Step 5: Calculate R^2
+R_squared <- summary(model)$r.squared
+print(R_squared)
+```
+
+
+
+```{r}
+# Step 6: Plot the estimated trend against the original data
+mfst_prices$estimated_trend <- A * exp(B * mfst_prices$Index)
+mfst_prices$estimated_trend
+
+```
+
+
+
+```{r}
+# Plot the original data and estimated trend
+library(ggplot2)
+
+# Ensure data is ordered by Date (if not already sorted)
+mfst_prices <- mfst_prices[order(mfst_prices$Date), ]
+# Plot the data with the estimated trend line
+
+# Ensure data is ordered by Date (ascending order)
+mfst_prices <- mfst_prices[order(mfst_prices$Date), ]
+
+# Plot with the estimated trend line
+ggplot(mfst_prices, aes(x = Date)) +
+  geom_line(aes(y = Close, group = 1), color = "black", size = 1) +  # Original data (black line)
+  geom_line(aes(y = estimated_trend, group = 1), color = "grey", size = 1) +  # Estimated trend (grey line)
+  labs(title = "Time Plot of Daily Adjusted Closing Prices with Estimated Trend",
+       x = "Date",
+       y = "Adjusted Closing Price") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+#Part d
+
+
+```{r}
+#....i) Arithmetic Mean ii) Min and Max iii) Standard Deviation iv)Coefficient of skewness v0 Coefficient of kurtosis
+library(fBasics)
+logr<-mfst_prices[,7]
+basicStats(logr)
+
+```
+
+
+```{r}
+#...Part e
+
+library(writexl)
+library(readxl)
+call<-read_xlsx("C:\\Users\\USER\\Desktop\\call.xlsx")
+put<-read_xlsx("C:\\Users\\USER\\Desktop\\put.xlsx")
+head(call)
+head(put)  
+
+#Plotting call bid and ask prices against the strike prices
+call$Ask <- as.numeric(call$Ask)
+call$Bid <- as.numeric(call$Bid)
+  ggplot(call, aes(x = Strike)) +
+  geom_line(aes(y = Ask, group = 100), color = "black", size = 1) +  # Ask (black line)
+    
+  geom_line(aes(y =Bid, group = 100), color = "grey", size = 1) +  # Bid (grey line)
+  labs(title = "Time Plot of Call Ask and Bid Price Against Strike",
+       x = "Date",
+       y = "Ask and Bid Price") +
+  theme_minimal() +
+  theme(legend.title = element_blank())
+```
+
+
+```{r}
+#Plotting Put Bid and Ask Prices against Strike
+
+library(ggplot2)
+put$Ask <- as.numeric(put$Ask)
+put$Bid <- as.numeric(put$Bid)
+  ggplot(put, aes(x = Strike)) +
+  geom_line(aes(y = Ask, grup = 100), color = "red", size = 1) +  # Ask (black line)
+    
+  geom_line(aes(y =Bid, group = 100), color = "green", size = 1) +  # Bid (grey line)
+  labs(title = "Time Plot of Put Ask and Bid Price Against Strike",
+       x = "Date",
+       y = "Ask and Bid Price") +
+  theme_minimal() +
+  theme(legend.title = element_blank())
+```
+
+
+```{r}
+  
+#Plotting the two together
+
+library(ggplot2)
+newplot <- data.frame(
+  Strike = call$Strike,  
+  Call_Ask = call$Ask,
+  Call_Bid = call$Bid,
+  Put_Ask = put$Ask,
+  Put_Bid = put$Bid
+)
+ggplot(newplot, aes(x = Strike)) +
+  # Call Ask and Bid
+  geom_line(aes(y = Call_Ask, group = 1), color = "black", size = 1) +
+  geom_line(aes(y = Call_Bid, group = 1), color = "grey", size = 1) +
+  # Put Ask and Bid
+  geom_line(aes(y = Put_Ask, group = 1), color = "red", size = 1) +
+  geom_line(aes(y = Put_Bid, group = 1), color = "green", size = 1) +
+  # Add labels
+  labs(
+    title = "Put/Call Ask and Bid Prices Against Strike",
+    x = "Strike Price",
+    y = "Prices"
+  ) +
+   theme_minimal() +
+  theme(legend.position = "none")
+
+#Point of Intersection of the Put and Call Prices is 417 which is the same as the price of the 
+#stock at time t.
+
+```
+
